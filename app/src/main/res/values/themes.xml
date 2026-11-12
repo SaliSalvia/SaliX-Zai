@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Main theme (post-splash): dark, AppCompat-based, Sali-ZZ colors -->
+    <style name="Theme.SaliX" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/dark_background</item>
+        <item name="android:statusBarColor">@color/dark_background</item>
+        <item name="android:navigationBarColor">@color/dark_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
+        <item name="android:colorAccent">@color/purple_primary</item>
+        <item name="colorAccent">@color/purple_primary</item>
+        <item name="android:colorPrimary">@color/purple_primary</item>
+        <item name="android:textColor">@color/dark_on_surface</item>
+        <item name="android:textColorPrimary">@color/dark_on_surface</item>
+        <item name="android:textColorSecondary">@color/dark_on_surface_variant</item>
+    </style>
+
+    <!-- System splash, identical hand-off to Sali-ZZ: plain color + logo -->
+    <style name="Theme.SaliX.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.SaliX</item>
+        <item name="android:windowBackground">@color/splash_background</item>
+        <item name="android:statusBarColor">@color/splash_background</item>
+        <item name="android:navigationBarColor">@color/splash_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
+    </style>
+
+    <!-- Popup menu on dark surface -->
+    <style name="Theme.SaliX.Popup" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@drawable/popup_bg</item>
+        <item name="android:textColor">@color/dark_on_surface</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+</resources>

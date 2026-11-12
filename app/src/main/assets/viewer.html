@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
+<title>SaliX-Z Viewer</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; }
+  body {
+    background:#12101A; color:#F8F6F1;
+    font:13px/1.6 Tahoma,-apple-system,"Segoe UI",sans-serif;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  #topbar {
+    display:none; align-items:center; gap:6px; flex-wrap:wrap;
+    padding:8px 10px; background:#1E1B29; border-bottom:1px solid #393344;
+    direction:rtl; flex:0 0 auto;
+  }
+  #topbar.show { display:flex; }
+  .tab {
+    background:#12101A; color:#B9B4C1; border:1px solid #393344; border-radius:8px;
+    padding:5px 14px; font:600 12px/1 Tahoma,sans-serif; cursor:pointer;
+  }
+  .tab.active { background:#6C4BE0; color:#fff; border-color:#6C4BE0; }
+  .grow { flex:1; }
+  #wrapbtn {
+    background:transparent; color:#B9B4C1; border:1px solid #393344; border-radius:8px;
+    padding:5px 12px; font:600 11px/1 Tahoma,sans-serif; cursor:pointer;
+  }
+  #wrapbtn.active { color:#4FD8E8; border-color:#4FD8E8; }
+  #stage { flex:1; min-height:0; position:relative; }
+  .pane { position:absolute; inset:0; display:none; }
+  .pane.show { display:block; }
+  /* ── code view ── */
+  #codepane { overflow:auto; direction:ltr; }
+  #codeinner { display:inline-flex; min-width:100%; }
+  #nums {
+    position:sticky; left:0; z-index:2; background:#12101A;
+    color:#57506A; text-align:right; padding:10px 8px 14px 12px;
+    border-right:1px solid #393344; user-select:none;
+    font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;
+    white-space:pre;
+  }
+  #codebox {
+    padding:10px 14px 14px 14px; white-space:pre;
+    font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;
+    flex:1;
+  }
+  body.wrap #nums { display:none; }
+  body.wrap #codebox { white-space:pre-wrap; word-break:break-all; }
+  /* tokens */
+  .t-c { color:#6E6880; font-style:italic; }   /* comment  */
+  .t-s { color:#8FCE7E; }                      /* string   */
+  .t-n { color:#E0BC7A; }                      /* number   */
+  .t-k { color:#9E86FF; font-weight:600; }     /* keyword  */
+  .t-t { color:#4FD8E8; }                      /* tag      */
+  /* ── result view ── */
+  #resultpane { background:#fff; }
+  #frame { width:100%; height:100%; border:0; background:#fff; }
+  /* markdown result */
+  #mdpane { overflow:auto; padding:18px 20px 30px; background:#12101A; }
+  #mdbox { max-width:760px; margin:0 auto; line-height:1.9; font-size:14px; }
+  #mdbox h1,#mdbox h2,#mdbox h3,#mdbox h4 { color:#F8F6F1; margin:1.1em 0 .5em; line-height:1.4; }
+  #mdbox h1 { font-size:1.55em; border-bottom:1px solid #393344; padding-bottom:.3em; }
+  #mdbox h2 { font-size:1.3em; } #mdbox h3 { font-size:1.12em; } #mdbox h4 { font-size:1em; }
+  #mdbox p { margin:.6em 0; }
+  #mdbox a { color:#9E86FF; }
+  #mdbox code {
+    background:#1E1B29; border:1px solid #393344; border-radius:5px;
+    padding:1px 6px; font-size:.88em; color:#4FD8E8; direction:ltr; unicode-bidi:embed;
+    font-family:ui-monospace,Menlo,Consolas,monospace;
+  }
+  #mdbox pre {
+    background:#08070D; border:1px solid #393344; border-radius:10px;
+    padding:12px 14px; overflow:auto; margin:.8em 0; direction:ltr; text-align:left;
+  }
+  #mdbox pre code { background:transparent; border:0; padding:0; color:#F3F0EA; }
+  #mdbox blockquote {
+    border-inline-start:3px solid #6C4BE0; background:#1E1B29;
+    padding:8px 14px; border-radius:8px; margin:.8em 0; color:#B9B4C1;
+  }
+  #mdbox ul,#mdbox ol { padding-inline-start:1.6em; margin:.6em 0; }
+  #mdbox li { margin:.25em 0; }
+  #mdbox hr { border:0; border-top:1px solid #393344; margin:1.2em 0; }
+  #mdbox img { max-width:100%; border-radius:8px; }
+  #mdbox table { border-collapse:collapse; margin:1em 0; width:100%; font-size:.92em; }
+  #mdbox th,#mdbox td { border:1px solid #393344; padding:6px 10px; text-align:start; }
+  #mdbox th { background:#1E1B29; }
+  /* ── image view ── */
+  #imgpane { overflow:auto; background:#08070D; display:none; }
+  #imgpane.show { display:block; }
+  #imgpane img { max-width:none; }
+</style>
+</head>
+<body>
+  <div id="topbar">
+    <button class="tab" id="tabCode">کد</button>
+    <button class="tab" id="tabResult">نتیجه</button>
+    <div class="grow"></div>
+    <button id="wrapbtn">شکستن خطوط</button>
+  </div>
+  <div id="stage">
+    <div class="pane" id="codepane">
+      <div id="codeinner">
+        <pre id="nums"></pre>
+        <pre id="codebox"></pre>
+      </div>
+    </div>
+    <div class="pane" id="resultpane">
+      <iframe id="frame" sandbox="allow-scripts allow-forms allow-modals allow-popups allow-downloads"></iframe>
+    </div>
+    <div class="pane" id="mdpane"><div id="mdbox"></div></div>
+    <div class="pane" id="imgpane"><img id="img" alt="preview"></div>
+  </div>
+
+<script>
+'use strict';
+/* ══════════════ mini syntax highlighter ══════════════ */
+var KW = {
+  clike: 'abstract as async await break case catch class const continue debugger default delete do else enum export extends false final finally for from func function get go goto if implements import in instanceof interface internal is let long new null operator override package private protected public readonly return sealed set static struct super switch this throw throws trait true try type typeof val var virtual void volatile when where while with yield',
+  python: 'and as assert async await break class continue def del elif else except False finally for from global if import in is lambda None nonlocal not or pass raise return True try while with yield self',
+  bash: 'if then else elif fi for while do done case esac function return in echo exit local read export set unset shift cd source alias',
+  sql: 'select from where and or not null is insert into values update set delete create table drop alter add primary key foreign references join left right inner outer on group by order having limit offset distinct as count sum avg min max union all index view'
+};
+function famOf(lang) {
+  switch (lang) {
+    case 'javascript': case 'typescript': case 'jsx': case 'tsx':
+    case 'java': case 'kotlin': case 'cpp': case 'c': case 'csharp':
+    case 'go': case 'rust': case 'dart': case 'swift': case 'php': case 'scala':
+      return 'clike';
+    case 'css': case 'scss': case 'less': return 'css';
+    case 'json': return 'json';
+    case 'xml': case 'html': case 'svg': case 'xsl': return 'xml';
+    case 'python': return 'python';
+    case 'bash': case 'sh': case 'shell': case 'zsh': return 'bash';
+    case 'sql': return 'sql';
+    case 'yaml': case 'yml': return 'yaml';
+    case 'toml': case 'ini': case 'properties': return 'yaml';
+    default: return '';
+  }
+}
+function regexFor(fam) {
+  switch (fam) {
+    case 'clike': return new RegExp(
+      '(\\/\\*[\\s\\S]*?\\*\\/|\\/\\/[^\\n]*)' +           // 1 comment
+      '|("(?:\\\\.|[^"\\\\\\n])*"|\'(?:\\\\.|[^\'\\\\\\n])*\'|`(?:\\\\.|[^`\\\\])*`)' + // 2 string
+      '|\\b(' + KW.clike.split(' ').join('|') + ')\\b' +    // 3 keyword
+      '|\\b(0x[0-9a-fA-F]+|\\d+\\.?\\d*(?:[eE][+-]?\\d+)?)', 'g'); // 4 number
+    case 'python': return new RegExp(
+      '(#[^\\n]*)' +
+      '|("""[\\s\\S]*?"""|\'\'\'[\\s\\S]*?\'\'\'|"(?:\\\\.|[^"\\\\\\n])*"|\'(?:\\\\.|[^\'\\\\\\n])*\')' +
+      '|\\b(' + KW.python.split(' ').join('|') + ')\\b' +
+      '|(^\\s*@\\w+)' +
+      '|\\b(\\d+\\.?\\d*)', 'gm');
+    case 'bash': return new RegExp(
+      '(#[^\\n]*)' +
+      '|("(?:\\\\.|[^"\\\\])*"|\'[^\']*\')' +
+      '|\\b(' + KW.bash.split(' ').join('|') + ')\\b' +
+      '|(\\$[\\w{][\\w}]*|\\b\\d+\\b)', 'g');
+    case 'sql': return new RegExp(
+      '(--[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)' +
+      '|(\'(?:\'\'|[^\'])*\'|"(?:[^"])*")' +
+      '|\\b(' + KW.sql.split(' ').join('|') + ')\\b' +
+      '|\\b(\\d+\\.?\\d*)', 'gi');
+    case 'json': return /("(?:\\.|[^"\\])*")(\s*:)?|(\btrue\b|\bfalse\b|\bnull\b)|(-?\d+\.?\d*(?:[eE][+-]?\d+)?)/g;
+    case 'yaml': return new RegExp(
+      '(#[^\\n]*)' +
+      '|("(?:\\\\.|[^"\\\\])*"|\'[^\']*\')' +
+      '|(^[ \\t]*-?[ \\t]*[\\w.\\-]+(?=:))' +
+      '|\\b(true|false|null|yes|no|on|off)\\b' +
+      '|\\b(\\d+\\.?\\d*)', 'gm');
+    case 'css': return /(\/\*[\s\S]*?\*\/)|("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|(#[0-9a-fA-F]{3,8}\b)|(\.[\w-]+|@[\w-]+|:[\w-]+)/g;
+    case 'xml': return /(<!--[\s\S]*?-->)|("(?:[^"])*"|'(?:[^'])*')|(<\/?[\w:.-]+|\/?>|<!\[CDATA\[|\]\]>)/g;
+    default: return null;
+  }
+}
+function esc(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function tokenClass(fam, groups) {
+  switch (fam) {
+    case 'clike': case 'python': case 'bash': case 'sql': case 'yaml':
+      if (groups[1]) return 't-c';
+      if (groups[2]) return 't-s';
+      if (groups[3]) return 't-k';
+      if (groups[4]) return 't-n';
+      return '';
+    case 'css':
+      if (groups[1]) return 't-c';
+      if (groups[2]) return 't-s';
+      if (groups[3]) return 't-n';
+      if (groups[4]) return 't-k';
+      return '';
+    case 'xml':
+      if (groups[1]) return 't-c';
+      if (groups[2]) return 't-s';
+      if (groups[3]) return 't-t';
+      return '';
+    case 'json':
+      if (groups[1] && groups[2]) return 't-k'; // key
+      if (groups[1]) return 't-s';              // string
+      if (groups[3]) return 't-k';              // true/false/null
+      if (groups[4]) return 't-n';
+      return '';
+    default: return '';
+  }
+}
+function highlight(code, lang) {
+  var fam = famOf(lang);
+  var re = regexFor(fam);
+  if (!re) return esc(code);
+  var out = '', last = 0, m;
+  while ((m = re.exec(code)) !== null) {
+    if (m.index > last) out += esc(code.slice(last, m.index));
+    var cls = tokenClass(fam, m);
+    out += cls ? '<span class="' + cls + '">' + esc(m[0]) + '</span>' : esc(m[0]);
+    last = m.index + m[0].length;
+    if (m[0].length === 0) re.lastIndex++;
+  }
+  out += esc(code.slice(last));
+  return out;
+}
+
+/* ══════════════ tiny markdown renderer ══════════════ */
+function inline(s) {
+  s = esc(s);
+  s = s.replace(/`([^`]+)`/g, function(_, c){ return '<code>' + c + '</code>'; });
+  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g, '<img src="$2" alt="$1">');
+  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)[^)]*\)/g, '<a href="$2">$1</a>');
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+  s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+  return s;
+}
+function mdToHtml(src) {
+  var lines = src.replace(/\r\n?/g, '\n').split('\n');
+  var html = '', i = 0, para = [];
+  function flush() {
+    if (para.length) { html += '<p>' + para.map(inline).join('<br>') + '</p>'; para = []; }
+  }
+  while (i < lines.length) {
+    var l = lines[i];
+    if (/^```/.test(l)) {
+      flush();
+      var lang = l.slice(3).trim().toLowerCase();
+      var buf = [];
+      i++;
+      while (i < lines.length && !/^```/.test(lines[i])) { buf.push(lines[i]); i++; }
+      i++;
+      html += '<pre><code>' + highlight(buf.join('\n'), lang) + '</code></pre>';
+      continue;
+    }
+    var h = l.match(/^(#{1,4})\s+(.*)/);
+    if (h) { flush(); html += '<h' + h[1].length + '>' + inline(h[2]) + '</h' + h[1].length + '>'; i++; continue; }
+    if (/^\s*(-{3,}|\*{3,})\s*$/.test(l)) { flush(); html += '<hr>'; i++; continue; }
+    if (/^\s*>\s?/.test(l)) {
+      flush();
+      var q = [];
+      while (i < lines.length && /^\s*>\s?/.test(lines[i])) { q.push(lines[i].replace(/^\s*>\s?/, '')); i++; }
+      html += '<blockquote>' + mdToHtml(q.join('\n')) + '</blockquote>';
+      continue;
+    }
+    if (/^\s*([-*+]|\d+[.)])\s+/.test(l)) {
+      flush();
+      var ordered = /^\s*\d/.test(l), items = [], tmp;
+      while (i < lines.length && (tmp = lines[i].match(/^\s*([-*+]|\d+[.)])\s+(.*)/))) {
+        items.push(tmp[2]); i++;
+      }
+      var tag = ordered ? 'ol' : 'ul';
+      html += '<' + tag + '>' + items.map(function(x){ return '<li>' + inline(x) + '</li>'; }).join('') + '</' + tag + '>';
+      continue;
+    }
+    if (l.indexOf('|') > -1 && i + 1 < lines.length && /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[i+1])) {
+      flush();
+      var head = l.replace(/^\||\|$/g, '').split('|').map(function(x){return x.trim();});
+      i += 2;
+      var rows = [];
+      while (i < lines.length && lines[i].indexOf('|') > -1 && lines[i].trim() !== '') {
+        rows.push(lines[i].replace(/^\||\|$/g, '').split('|').map(function(x){return x.trim();}));
+        i++;
+      }
+      html += '<table><thead><tr>' + head.map(function(x){return '<th>'+inline(x)+'</th>';}).join('') + '</tr></thead><tbody>' +
+        rows.map(function(r){ return '<tr>' + r.map(function(x){return '<td>'+inline(x)+'</td>';}).join('') + '</tr>'; }).join('') +
+        '</tbody></table>';
+      continue;
+    }
+    if (l.trim() === '') { flush(); i++; continue; }
+    para.push(l); i++;
+  }
+  flush();
+  return html;
+}
+
+/* ══════════════ viewer API ══════════════ */
+var SaliXViewer = {
+  setContent: function (o) {
+    var mode = (o && o.mode) || 'code';
+    var lang = (o && o.lang) || 'text';
+    var content = (o && o.content) || '';
+
+    document.body.classList.remove('wrap');
+    document.getElementById('wrapbtn').classList.remove('active');
+
+    var top = document.getElementById('topbar');
+    var panes = ['codepane', 'resultpane', 'mdpane', 'imgpane'];
+    function show(id) {
+      panes.forEach(function (p) {
+        document.getElementById(p).classList.toggle('show', p === id);
+      });
+    }
+    function tab(active) {
+      document.getElementById('tabCode').classList.toggle('active', active === 'code');
+      document.getElementById('tabResult').classList.toggle('active', active === 'result');
+    }
+
+    if (mode === 'image') {
+      top.classList.remove('show');
+      show('imgpane');
+      document.getElementById('img').src = content;
+      return;
+    }
+
+    if (mode === 'html' || mode === 'md') {
+      top.classList.add('show');
+      document.getElementById('tabCode').style.display = '';
+      document.getElementById('tabResult').style.display = '';
+      document.getElementById('tabCode').onclick = function () { tab('code'); show('codepane'); };
+      document.getElementById('tabResult').onclick = function () {
+        tab('result');
+        show(mode === 'html' ? 'resultpane' : 'mdpane');
+      };
+      if (mode === 'html') {
+        document.getElementById('frame').srcdoc = content;
+        tab('result'); show('resultpane');
+      } else {
+        document.getElementById('mdbox').innerHTML = mdToHtml(content);
+        tab('result'); show('mdpane');
+      }
+    } else {
+      top.classList.add('show');
+      document.getElementById('tabCode').style.display = 'none';
+      document.getElementById('tabResult').style.display = 'none';
+      show('codepane');
+    }
+
+    // code pane content (also used by the "کد" tab of html/md)
+    var box = document.getElementById('codebox');
+    box.innerHTML = highlight(content, mode === 'html' ? 'xml' : lang);
+    var n = content.split('\n').length;
+    var nums = [];
+    for (var i = 1; i <= n; i++) nums.push(i);
+    document.getElementById('nums').textContent = nums.join('\n');
+  },
+  toggleWrap: function () {
+    document.body.classList.toggle('wrap');
+    document.getElementById('wrapbtn').classList.toggle('active',
+      document.body.classList.contains('wrap'));
+  }
+};
+document.getElementById('wrapbtn').onclick = SaliXViewer.toggleWrap;
+</script>
+</body>
+</html>

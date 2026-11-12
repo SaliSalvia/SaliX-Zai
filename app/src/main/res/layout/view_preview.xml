@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/previewRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/preview_bg"
+    android:elevation="16dp"
+    android:visibility="gone"
+    tools:visibility="visible">
+
+    <!-- Draggable header -->
+    <LinearLayout
+        android:id="@+id/previewHeader"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="14dp"
+        android:paddingEnd="8dp"
+        android:background="@color/dark_surface_variant">
+
+        <TextView
+            android:id="@+id/previewName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:singleLine="true"
+            android:ellipsize="middle"
+            android:textColor="@color/dark_on_surface"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            tools:text="index.html" />
+
+        <TextView
+            android:id="@+id/previewLang"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/btn_chip_bg_outline"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:textColor="@color/purple_light"
+            android:textSize="11sp"
+            android:layoutDirection="ltr"
+            tools:text="html" />
+
+        <ImageButton
+            android:id="@+id/btnExpand"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="4dp"
+            android:src="@drawable/ic_expand"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/preview_expand" />
+
+        <ImageButton
+            android:id="@+id/btnMinimize"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_minimize"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/preview_minimize" />
+
+        <ImageButton
+            android:id="@+id/btnClose"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_close"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/preview_close" />
+    </LinearLayout>
+
+    <!-- Action chips row -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:requiresFadingEdge="horizontal">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:id="@+id/chipCopy"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:gravity="center"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/btn_chip_bg"
+                android:text="@string/preview_copy"
+                android:textColor="@color/dark_on_surface"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/chipSave"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:gravity="center"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/btn_chip_bg"
+                android:text="@string/preview_save"
+                android:textColor="@color/dark_on_surface"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/chipShare"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:gravity="center"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/btn_chip_bg"
+                android:text="@string/preview_share"
+                android:textColor="@color/dark_on_surface"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/chipExternal"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:gravity="center"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/btn_chip_bg"
+                android:text="@string/open_externally"
+                android:textColor="@color/dark_on_surface"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- Body: viewer WebView -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <WebView
+            android:id="@+id/previewWeb"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layoutDirection="ltr"
+            android:background="@color/dark_surface" />
+
+        <ProgressBar
+            android:id="@+id/previewLoading"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/purple_primary" />
+    </FrameLayout>
+</LinearLayout>

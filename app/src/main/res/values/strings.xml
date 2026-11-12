@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App identity -->
+    <string name="app_name">SaliX-Z</string>
+    <string name="app_tagline">دستیار هوشمند — چت رایگان Z.ai</string>
+
+    <!-- Shell UI (Persian) -->
+    <string name="menu_refresh">بازآوری صفحه</string>
+    <string name="menu_desktop">حالت دسکتاپ</string>
+    <string name="menu_mobile">حالت موبایل</string>
+    <string name="menu_immersive">نمایش تمام‌صفحه (پنهان‌کردن نوار بالا)</string>
+    <string name="menu_show_bar">نمایش نوار بالا</string>
+    <string name="menu_open_browser">باز کردن در مرورگر</string>
+    <string name="menu_clear_data">پاک کردن کوکی و داده‌ها (خروج)</string>
+    <string name="menu_about">درباره SaliX-Z</string>
+
+    <string name="loading_site">در حال اتصال به chat.z.ai…</string>
+    <string name="offline_title">اتصال برقرار نشد</string>
+    <string name="offline_hint">اینترنت گوشی را بررسی کنید و دوباره تلاش کنید.</string>
+    <string name="retry">تلاش مجدد</string>
+    <string name="exit_hint">برای خروج دوباره دکمه بازگشت را بزنید</string>
+
+    <!-- Preview panel -->
+    <string name="preview">پیش‌نمایش</string>
+    <string name="preview_tab_code">کد</string>
+    <string name="preview_tab_result">نتیجه</string>
+    <string name="preview_copy">کپی</string>
+    <string name="preview_save">ذخیره</string>
+    <string name="preview_share">اشتراک</string>
+    <string name="preview_minimize">جمع کردن (ادامه چت)</string>
+    <string name="preview_close">بستن</string>
+    <string name="preview_expand">تمام‌صفحه</string>
+    <string name="preview_collapse">نیم‌صفحه</string>
+    <string name="preview_pill">پیش‌نمایش فایل</string>
+    <string name="copied">کپی شد</string>
+    <string name="saved_to_downloads">در پوشه دانلودها ذخیره شد</string>
+    <string name="download_started">دانلود شروع شد…</string>
+    <string name="download_failed">دانلود ناموفق بود</string>
+    <string name="open_externally">باز کردن با برنامه دیگر</string>
+    <string name="share_via">اشتراک‌گذاری با</string>
+    <string name="wrap_lines">شکستن طولانی خطوط</string>
+    <string name="unwrap_lines">خطوط کامل</string>
+
+    <string name="about_body">SaliX-Z نسخه ۱.۰.۰\n\nپوسته اندرویدی بهینه برای chat.z.ai — بدون واسط و سرور واسط؛ مستقیم از وب‌سایت رسمی استفاده می‌کند.\n\nچگونه کار می‌کند: وب‌سایت در WebView اجرا می‌شود و دسترسی رایگان به مدل‌های GLM همان تجربه مرورگر است.\nسامانه پیش‌نمایش فایل، خروجی‌های کد و فایل مدل‌ها را بهینه برای موبایل و به‌صورت قابل جمع‌شدن نمایش می‌دهد.\n\nهویت بصری بر پایه پروژه متن‌باز Sali-ZZ.</string>
+</resources>

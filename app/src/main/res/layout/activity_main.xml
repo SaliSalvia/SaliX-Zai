@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/dark_background"
+    android:layoutDirection="rtl">
+
+    <!-- ── Top bar: Sali-ZZ styled shell chrome ─────────────────────── -->
+    <LinearLayout
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="14dp"
+        android:paddingEnd="6dp"
+        android:background="@drawable/toolbar_bg">
+
+        <ImageView
+            android:id="@+id/toolbarLogo"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/sali_logo_icon"
+            android:contentDescription="@string/app_name" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/app_name"
+                android:textColor="@color/dark_on_surface"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="chat.z.ai · GLM"
+                android:textColor="@color/purple_light"
+                android:textSize="10sp"
+                android:layoutDirection="ltr" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnMenu"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:src="@drawable/ic_menu"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/menu_about" />
+    </LinearLayout>
+
+    <!-- ── Content: web shell + overlays ─────────────────────────────── -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ProgressBar
+            android:id="@+id/progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:max="100"
+            android:progressTint="@color/progress_bar"
+            android:background="@color/dark_surface"
+            android:layout_gravity="top" />
+
+        <WebView
+            android:id="@+id/web"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layoutDirection="ltr"
+            android:background="@color/dark_background" />
+
+        <!-- Fullscreen video host -->
+        <FrameLayout
+            android:id="@+id/fullscreenContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/black"
+            android:visibility="gone" />
+
+        <!-- Branded intro overlay while the site loads -->
+        <FrameLayout
+            android:id="@+id/intro"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/dark_background"
+            android:clickable="true"
+            android:focusable="true">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_gravity="center">
+
+                <ImageView
+                    android:layout_width="112dp"
+                    android:layout_height="112dp"
+                    android:src="@drawable/sali_logo_splash"
+                    android:contentDescription="@string/app_name" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:text="@string/app_name"
+                    android:textColor="@color/dark_on_surface"
+                    android:textSize="26sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/app_tagline"
+                    android:textColor="@color/dark_on_surface_variant"
+                    android:textSize="13sp" />
+
+                <ProgressBar
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginTop="22dp"
+                    android:indeterminateTint="@color/purple_primary" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- Offline / error overlay -->
+        <LinearLayout
+            android:id="@+id/offline"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@color/dark_background"
+            android:padding="32dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:src="@drawable/sali_logo_icon"
+                android:alpha="0.45"
+                android:contentDescription="@string/offline_title" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="@string/offline_title"
+                android:textColor="@color/dark_on_surface"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="@string/offline_hint"
+                android:textColor="@color/dark_on_surface_variant"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/btnRetry"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_marginTop="24dp"
+                android:gravity="center"
+                android:paddingStart="28dp"
+                android:paddingEnd="28dp"
+                android:background="@drawable/btn_chip_bg"
+                android:text="@string/retry"
+                android:textColor="@color/purple_light"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <!-- Minimized preview pill (chat keeps working underneath) -->
+        <LinearLayout
+            android:id="@+id/pill"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|start"
+            android:layout_margin="14dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="14dp"
+            android:paddingEnd="6dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:background="@drawable/pill_bg"
+            android:elevation="8dp"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_eye"
+                android:contentDescription="@string/preview_pill" />
+
+            <TextView
+                android:id="@+id/pillLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="6dp"
+                android:maxWidth="180dp"
+                android:singleLine="true"
+                android:ellipsize="middle"
+                android:text="@string/preview_pill"
+                android:textColor="@color/dark_on_surface"
+                android:textSize="13sp" />
+
+            <ImageButton
+                android:id="@+id/pillClose"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:src="@drawable/ic_close"
+                android:scaleType="centerInside"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/preview_close" />
+        </LinearLayout>
+
+        <!-- Small handle to bring the top bar back in immersive mode -->
+        <ImageButton
+            android:id="@+id/btnRestoreBar"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_gravity="top|start"
+            android:layout_margin="8dp"
+            android:src="@drawable/ic_arrow_down"
+            android:background="@drawable/pill_bg"
+            android:elevation="6dp"
+            android:contentDescription="@string/menu_show_bar"
+            android:visibility="gone" />
+
+        <!-- ── File preview panel (half / full screen, draggable) ─────── -->
+        <include
+            android:id="@+id/previewPanel"
+            layout="@layout/view_preview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom" />
+    </FrameLayout>
+</LinearLayout>

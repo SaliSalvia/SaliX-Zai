@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand colors carried over from Sali-ZZ (violet / cyan / gold logo) -->
+    <color name="purple_primary">#6C4BE0</color>
+    <color name="purple_dark">#2A1F4D</color>
+    <color name="purple_light">#9E86FF</color>
+    <color name="purple_accent">#4FD8E8</color>
+    <color name="brand_gold">#E0BC7A</color>
+
+    <!-- Dark theme colors -->
+    <color name="dark_background">#08070D</color>
+    <color name="dark_surface">#12101A</color>
+    <color name="dark_surface_variant">#1E1B29</color>
+    <color name="dark_on_background">#F3F0EA</color>
+    <color name="dark_on_surface">#F8F6F1</color>
+    <color name="dark_on_surface_variant">#B9B4C1</color>
+    <color name="dark_outline">#393344</color>
+
+    <!-- Shell extras -->
+    <color name="splash_background">#08070D</color>
+    <color name="progress_bar">#6C4BE0</color>
+    <color name="pill_surface">#2A1F4D</color>
+    <color name="error_red">#E25B5B</color>
+    <color name="success_green">#4FC98B</color>
+</resources>
