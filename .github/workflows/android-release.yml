@@ -104,12 +104,26 @@ jobs:
           sha256sum "dist/Sali-Zai-${{ steps.ver.outputs.ver }}.apk" \
             > "dist/Sali-Zai-${{ steps.ver.outputs.ver }}.apk.sha256"
 
-      - name: Create GitHub Release
+      - name: Upload build artifact (safety net)
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-apk-${{ steps.ver.outputs.ver }}
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Create or update GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          gh release create "${{ steps.ver.outputs.tag }}" dist/* \
-            --target "$GITHUB_SHA" \
-            --title "Sali-Zai ${{ steps.ver.outputs.ver }}" \
-            --generate-notes
+          TAG_NAME="${{ steps.ver.outputs.tag }}"
+          if gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG_NAME already exists - uploading signed APK with --clobber"
+            gh release upload "$TAG_NAME" dist/* --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG_NAME" dist/* \
+              --target "$GITHUB_SHA" \
+              --title "Sali-Zai ${{ steps.ver.outputs.ver }}" \
+              --generate-notes \
+              --repo "$GITHUB_REPOSITORY"
+          fi
