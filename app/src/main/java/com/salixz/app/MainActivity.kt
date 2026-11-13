@@ -2,19 +2,27 @@ package com.salixz.app
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.AlertDialog
+import android.app.Dialog
 import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Message
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.webkit.CookieManager
 import android.webkit.PermissionRequest
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -25,6 +33,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -33,10 +42,12 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
 class MainActivity : AppCompatActivity() {
 
@@ -44,11 +55,27 @@ class MainActivity : AppCompatActivity() {
         const val HOME = "https://chat.z.ai"
         const val DESKTOP_UA =
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+
+        /** Domains that stay inside the shell (the chat plus the sign-in providers). */
+        private val INTERNAL_DOMAINS = listOf("z.ai")
+        private val AUTH_DOMAINS = listOf(
+            "accounts.google.com",
+            "appleid.apple.com",
+            "github.com",
+            "login.microsoftonline.com"
+        )
+
+        fun isInternalHost(host: String?): Boolean {
+            val h = host?.lowercase() ?: return false
+            return INTERNAL_DOMAINS.any { h == it || h.endsWith(".$it") } ||
+                AUTH_DOMAINS.any { h == it || h.endsWith(".$it") }
+        }
     }
 
     lateinit var web: WebView
     lateinit var preview: PreviewController
-    private lateinit var toolbar: LinearLayout
+    private lateinit var swipe: SwipeRefreshLayout
+    private lateinit var toolbar: View
     private lateinit var progress: ProgressBar
     private lateinit var intro: FrameLayout
     private lateinit var offline: LinearLayout
@@ -57,6 +84,7 @@ class MainActivity : AppCompatActivity() {
 
     private var defaultUA: String = ""
     private var introDone = false
+    private var pageLoaded = false
     private var desktopMode = false
     private var immersive = false
 
@@ -64,6 +92,7 @@ class MainActivity : AppCompatActivity() {
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
     private var pendingAudioRequest: PermissionRequest? = null
+    private var pendingStorageAction: (() -> Unit)? = null
 
     private val pickSingle = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         filePathCallback?.onReceiveValue(uri?.let { arrayOf(it) })
@@ -78,6 +107,11 @@ class MainActivity : AppCompatActivity() {
         pendingAudioRequest = null
         if (granted) req?.grant(req.resources) else req?.deny()
     }
+    private val requestStorage = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        val action = pendingStorageAction
+        pendingStorageAction = null
+        if (granted) action?.invoke() else toast(getString(R.string.storage_permission_denied))
+    }
 
     private var backPressedAt = 0L
 
@@ -87,6 +121,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         web = findViewById(R.id.web)
+        swipe = findViewById(R.id.swipe)
         toolbar = findViewById(R.id.toolbar)
         progress = findViewById(R.id.progress)
         intro = findViewById(R.id.intro)
@@ -97,12 +132,17 @@ class MainActivity : AppCompatActivity() {
         desktopMode = Prefs.read(this, Prefs.KEY_DESKTOP)
         preview = PreviewController(this)
         setupWeb()
+        setupSwipe()
         setupMenu()
         setupBack()
-        handleSendIntent(intent)
+        setupIntro()
 
         if (Prefs.read(this, Prefs.KEY_IMMERSIVE)) enterImmersive(showToast = false)
-        web.loadUrl(HOME)
+
+        val restored = savedInstanceState?.let { web.restoreState(it) } != null
+        if (!restored) web.loadUrl(initialUrl())
+        if (savedInstanceState == null) handleShareIntent(intent)
+        handleViewIntent(intent)
     }
 
     // ── WebView shell ─────────────────────────────────────────────────
@@ -119,10 +159,11 @@ class MainActivity : AppCompatActivity() {
             mediaPlaybackRequiresUserGesture = false
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             javaScriptCanOpenWindowsAutomatically = true
-            setSupportMultipleWindows(false)
+            // Popups/OAuth targets (_blank) are routed back into the shell by onCreateWindow.
+            setSupportMultipleWindows(true)
             setGeolocationEnabled(false)
-            if (desktopMode) userAgentString = DESKTOP_UA
         }
+        applyDisplayMode()
         CookieManager.getInstance().apply {
             setAcceptCookie(true)
             setAcceptThirdPartyCookies(web, true)
@@ -131,25 +172,45 @@ class MainActivity : AppCompatActivity() {
         web.setBackgroundColor(getColor(R.color.dark_background))
 
         web.webViewClient = object : WebViewClient() {
+
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val u = request.url
-                val scheme = u.scheme ?: return false
-                if (scheme == "http" || scheme == "https") return false // stay in the shell
-                if (scheme == "about" || scheme == "blob" || scheme == "data") return false
-                // mailto:, tel:, intent:, ws: … → hand to the system
-                try {
-                    startActivity(Intent(Intent.ACTION_VIEW, u))
-                } catch (_: ActivityNotFoundException) {
+                val scheme = (u.scheme ?: "").lowercase()
+                if (scheme == "http" || scheme == "https") {
+                    // Chat + sign-in providers stay in the shell, everything else
+                    // opens in the real browser instead of hijacking the chat page.
+                    if (isInternalHost(u.host)) return false
+                    openLinkExternally(u)
+                    return true
                 }
-                return true
+                if (scheme == "about" || scheme == "blob" || scheme == "data" || scheme == "javascript") {
+                    return false
+                }
+                // mailto:, tel:, intent:, market: … → hand to the system
+                return handOffToSystem(u)
+            }
+
+            override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
+                pageLoaded = false
             }
 
             override fun onPageFinished(view: WebView, url: String) {
+                pageLoaded = true
+                swipe.isRefreshing = false
+                offline.visibility = View.GONE
                 injectShell()
             }
 
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
-                if (request.isForMainFrame) showOffline(request.url.toString())
+                if (request.isForMainFrame && !pageLoaded) showOffline()
+            }
+
+            override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+                // The renderer died (usually OOM). Restart the shell instead of
+                // leaving the user with a dead white page.
+                toast(getString(R.string.renderer_restarted))
+                window.decorView.post { if (!isFinishing) recreate() }
+                return true
             }
         }
 
@@ -158,6 +219,31 @@ class MainActivity : AppCompatActivity() {
                 progress.progress = newProgress
                 progress.visibility = if (newProgress in 1..99) View.VISIBLE else View.GONE
                 if (newProgress >= 60) hideIntroOnce()
+            }
+
+            override fun onCreateWindow(
+                view: WebView,
+                isDialog: Boolean,
+                isUserGesture: Boolean,
+                resultMsg: Message
+            ): Boolean {
+                // _blank links and OAuth popups: read the target URL, then either
+                // load it in the shell or hand it to the browser.
+                val popup = WebView(this@MainActivity)
+                popup.settings.javaScriptEnabled = true
+                popup.webViewClient = object : WebViewClient() {
+                    override fun shouldOverrideUrlLoading(v: WebView, request: WebResourceRequest): Boolean {
+                        val uri = request.url
+                        if (isInternalHost(uri.host)) web.loadUrl(uri.toString()) else openLinkExternally(uri)
+                        v.stopLoading()
+                        v.post { v.destroy() }
+                        return true
+                    }
+                }
+                val transport = resultMsg.obj as? WebView.WebViewTransport ?: return false
+                transport.webView = popup
+                resultMsg.sendToTarget()
+                return true
             }
 
             override fun onShowCustomView(view: View, callback: CustomViewCallback) {
@@ -172,7 +258,8 @@ class MainActivity : AppCompatActivity() {
                     FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                 )
                 fullscreenContainer.visibility = View.VISIBLE
-                web.visibility = View.GONE
+                swipe.visibility = View.GONE
+                toolbar.visibility = View.GONE
             }
 
             override fun onHideCustomView() {
@@ -186,7 +273,9 @@ class MainActivity : AppCompatActivity() {
             ): Boolean {
                 filePathCallback?.onReceiveValue(null)
                 filePathCallback = callback
-                val accept = params.acceptTypes.firstOrNull { it.isNotBlank() && it != "*/*" } ?: "*/*"
+                val accept = params.acceptTypes
+                    .firstOrNull { it.isNotBlank() && it != "*/*" && !it.contains(',') }
+                    ?: "*/*"
                 try {
                     if (params.mode == FileChooserParams.MODE_OPEN_MULTIPLE) pickMultiple.launch(accept)
                     else pickSingle.launch(accept)
@@ -215,12 +304,43 @@ class MainActivity : AppCompatActivity() {
         }
 
         web.setDownloadListener { url, ua, disposition, mime, _ ->
-            preview.downloadAndPreview(url, ua, mime, disposition)
+            preview.handleDownload(url, ua, mime, disposition)
         }
 
         findViewById<View>(R.id.btnRetry).setOnClickListener {
             offline.visibility = View.GONE
             web.loadUrl(HOME)
+        }
+        findViewById<View>(R.id.btnOfflineBrowser).setOnClickListener {
+            openInBrowser()
+        }
+    }
+
+    private fun setupSwipe() {
+        swipe.setOnRefreshListener { web.reload() }
+        swipe.setColorSchemeColors(
+            ContextCompat.getColor(this, R.color.purple_primary),
+            ContextCompat.getColor(this, R.color.purple_accent)
+        )
+        swipe.setProgressBackgroundColorSchemeColor(ContextCompat.getColor(this, R.color.dark_surface_variant))
+    }
+
+    private fun applyDisplayMode() {
+        web.settings.apply {
+            userAgentString = if (desktopMode) DESKTOP_UA else defaultUA
+            useWideViewPort = desktopMode
+            loadWithOverviewMode = desktopMode
+        }
+    }
+
+    private fun setupIntro() {
+        intro.post {
+            intro.findViewById<View>(R.id.introLogo)?.apply {
+                alpha = 0f
+                scaleX = 0.88f
+                scaleY = 0.88f
+                animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(420).start()
+            }
         }
     }
 
@@ -235,13 +355,14 @@ class MainActivity : AppCompatActivity() {
     private fun hideIntroOnce() {
         if (introDone) return
         introDone = true
-        intro.animate().alpha(0f).setDuration(350).withEndAction { intro.visibility = View.GONE }.start()
+        intro.animate().alpha(0f).setDuration(320)
+            .withEndAction { intro.visibility = View.GONE }
+            .start()
     }
 
-    private fun showOffline(url: String) {
+    private fun showOffline() {
         hideIntroOnce()
         offline.visibility = View.VISIBLE
-        web.tag = url
     }
 
     fun webUA(): String = web.settings.userAgentString
@@ -250,38 +371,143 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
-    // ── Menu / toolbar ────────────────────────────────────────────────
+    fun isTrustedOrigin(url: String?): Boolean {
+        if (url.isNullOrBlank()) return false
+        val host = try {
+            Uri.parse(url).host
+        } catch (_: Throwable) {
+            null
+        }
+        return isInternalHost(host)
+    }
+
+    fun openLinkExternally(uri: Uri) {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, uri))
+        } catch (_: ActivityNotFoundException) {
+        }
+    }
+
+    private fun handOffToSystem(uri: Uri): Boolean {
+        return try {
+            startActivity(Intent(Intent.ACTION_VIEW, uri))
+            true
+        } catch (_: ActivityNotFoundException) {
+            false
+        }
+    }
+
+    /**
+     * Android 8/9 need WRITE_EXTERNAL_STORAGE to land files in the public
+     * Downloads folder; newer versions use MediaStore and need nothing.
+     */
+    fun withDownloadsAccess(action: () -> Unit) {
+        val needsPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
+            PackageManager.PERMISSION_GRANTED
+        if (!needsPermission) {
+            action()
+        } else {
+            pendingStorageAction = action
+            requestStorage.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        }
+    }
+
+    // ── Menu ──────────────────────────────────────────────────────────
+
+    private data class MenuAction(
+        val icon: Int,
+        val title: String,
+        val subtitle: String?,
+        val destructive: Boolean = false,
+        val onClick: () -> Unit
+    )
 
     private fun setupMenu() {
-        findViewById<View>(R.id.btnMenu).setOnClickListener {
-            val labels = arrayOf(
-                getString(R.string.menu_refresh),
-                if (desktopMode) getString(R.string.menu_mobile) else getString(R.string.menu_desktop),
-                if (immersive) getString(R.string.menu_show_bar) else getString(R.string.menu_immersive),
-                getString(R.string.menu_open_browser),
-                getString(R.string.menu_clear_data),
-                getString(R.string.menu_about)
-            )
-            AlertDialog.Builder(this)
-                .setTitle(getString(R.string.app_name))
-                .setItems(labels) { _, which -> when (which) {
-                    0 -> web.reload()
-                    1 -> toggleDesktop()
-                    2 -> toggleImmersive()
-                    3 -> openInBrowser()
-                    4 -> confirmClearData()
-                    5 -> showAbout()
-                } }
-                .show()
-        }
-
+        findViewById<View>(R.id.btnMenu).setOnClickListener { showMenu() }
         btnRestoreBar.setOnClickListener { exitImmersive() }
     }
+
+    private fun showMenu() {
+        val dialog = Dialog(this, R.style.Theme_SaliX_Sheet)
+        dialog.setContentView(R.layout.dialog_menu)
+        val rows = dialog.findViewById<LinearLayout>(R.id.menuRows)
+        val actions = buildMenuActions()
+
+        actions.forEachIndexed { index, action ->
+            val row = layoutInflater.inflate(R.layout.view_menu_row, rows, false)
+            row.findViewById<ImageView>(R.id.menuIcon).setImageResource(action.icon)
+            row.findViewById<TextView>(R.id.menuTitle).apply {
+                text = action.title
+                if (action.destructive) setTextColor(ContextCompat.getColor(this@MainActivity, R.color.error_red))
+            }
+            val sub = row.findViewById<TextView>(R.id.menuSubtitle)
+            if (action.subtitle.isNullOrBlank()) {
+                sub.visibility = View.GONE
+            } else {
+                sub.text = action.subtitle
+            }
+            val icon = row.findViewById<ImageView>(R.id.menuIcon)
+            if (action.destructive) icon.setColorFilter(ContextCompat.getColor(this, R.color.error_red))
+            row.findViewById<View>(R.id.menuDivider).visibility =
+                if (index < actions.lastIndex) View.VISIBLE else View.GONE
+            row.setOnClickListener {
+                dialog.dismiss()
+                action.onClick()
+            }
+            rows.addView(row)
+        }
+
+        dialog.findViewById<View>(R.id.menuCancel).setOnClickListener { dialog.dismiss() }
+        dialog.window?.apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            setDimAmount(0.6f)
+            setGravity(Gravity.BOTTOM)
+            setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        }
+        dialog.show()
+        dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+    }
+
+    private fun buildMenuActions(): List<MenuAction> = listOf(
+        MenuAction(
+            R.drawable.ic_refresh,
+            getString(R.string.menu_refresh),
+            getString(R.string.menu_refresh_sub)
+        ) { web.reload() },
+        MenuAction(
+            if (desktopMode) R.drawable.ic_mobile else R.drawable.ic_desktop,
+            if (desktopMode) getString(R.string.menu_mobile) else getString(R.string.menu_desktop),
+            getString(R.string.menu_desktop_sub)
+        ) { toggleDesktop() },
+        MenuAction(
+            if (immersive) R.drawable.ic_arrow_down else R.drawable.ic_expand,
+            if (immersive) getString(R.string.menu_show_bar) else getString(R.string.menu_immersive),
+            getString(R.string.menu_immersive_sub)
+        ) { toggleImmersive() },
+        MenuAction(
+            R.drawable.ic_open_ext,
+            getString(R.string.menu_open_browser),
+            getString(R.string.menu_open_browser_sub)
+        ) { openInBrowser() },
+        MenuAction(
+            R.drawable.ic_delete,
+            getString(R.string.menu_clear_data),
+            getString(R.string.menu_clear_data_sub),
+            destructive = true
+        ) { confirmClearData() },
+        MenuAction(
+            R.drawable.ic_info,
+            getString(R.string.menu_about),
+            getString(R.string.about_version, BuildConfig.VERSION_NAME)
+        ) { showAbout() }
+    )
 
     private fun toggleDesktop() {
         desktopMode = !desktopMode
         Prefs.write(this, Prefs.KEY_DESKTOP, desktopMode)
-        web.settings.userAgentString = if (desktopMode) DESKTOP_UA else defaultUA
+        applyDisplayMode()
         toast(if (desktopMode) getString(R.string.menu_desktop) else getString(R.string.menu_mobile))
         web.reload()
     }
@@ -312,16 +538,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openInBrowser() {
-        try {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(web.url ?: HOME)))
-        } catch (_: ActivityNotFoundException) {
-        }
+        openLinkExternally(Uri.parse(web.url ?: HOME))
     }
 
     private fun confirmClearData() {
-        AlertDialog.Builder(this)
+        androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle(getString(R.string.menu_clear_data))
-            .setMessage("همه کوکی‌ها و داده‌های ورود از این پوسته پاک می‌شود. مطمئن هستید؟")
+            .setMessage(getString(R.string.clear_data_confirm))
             .setPositiveButton(getString(R.string.preview_close)) { _, _ -> clearAllData() }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
@@ -330,19 +553,24 @@ class MainActivity : AppCompatActivity() {
     private fun clearAllData() {
         web.clearCache(true)
         web.clearHistory()
+        web.clearFormData()
         WebStorage.getInstance().deleteAllData()
         val cm = CookieManager.getInstance()
         cm.removeAllCookies { }
         cm.removeSessionCookies { }
         cm.flush()
-        toast("داده‌ها پاک شد")
+        try {
+            java.io.File(cacheDir, "previews").deleteRecursively()
+        } catch (_: Throwable) {
+        }
+        toast(getString(R.string.data_cleared))
         web.loadUrl(HOME)
     }
 
     private fun showAbout() {
-        AlertDialog.Builder(this)
+        androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle(getString(R.string.app_name))
-            .setMessage(getString(R.string.about_body))
+            .setMessage(getString(R.string.about_body, BuildConfig.VERSION_NAME))
             .setPositiveButton(android.R.string.ok, null)
             .show()
     }
@@ -374,41 +602,69 @@ class MainActivity : AppCompatActivity() {
         customView?.let { fullscreenContainer.removeView(it) }
         customView = null
         fullscreenContainer.visibility = View.GONE
-        web.visibility = View.VISIBLE
+        swipe.visibility = View.VISIBLE
+        toolbar.visibility = if (immersive) View.GONE else View.VISIBLE
         customViewCallback?.onCustomViewHidden()
         customViewCallback = null
     }
 
-    // ── Share-in (text from other apps) ───────────────────────────────
+    // ── Intents ───────────────────────────────────────────────────────
 
-    private fun handleSendIntent(intent: Intent?) {
-        if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
-            val text = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return
-            val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(ClipData.newPlainText("SaliX-Z", text))
-            toast("متن کپی شد — در چت پیست کنید")
+    private fun initialUrl(): String {
+        val data = intent?.takeIf { it.action == Intent.ACTION_VIEW }?.data
+        return if (data != null && isInternalHost(data.host)) data.toString() else HOME
+    }
+
+    private fun handleViewIntent(intent: Intent?) {
+        if (intent?.action != Intent.ACTION_VIEW) return
+        val data = intent.data ?: return
+        if (isInternalHost(data.host) && data.toString() != web.url) {
+            web.loadUrl(data.toString())
         }
+    }
+
+    private fun handleShareIntent(intent: Intent?) {
+        if (intent?.action != Intent.ACTION_SEND || intent.type != "text/plain") return
+        val text = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return
+        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        cm.setPrimaryClip(ClipData.newPlainText("SaliX-Z", text))
+        toast(getString(R.string.shared_text_copied))
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        handleSendIntent(intent)
+        setIntent(intent)
+        handleShareIntent(intent)
+        handleViewIntent(intent)
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        web.saveState(outState)
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        preview.onConfigurationChanged()
+    }
+
     override fun onPause() {
         CookieManager.getInstance().flush()
         web.onPause()
+        web.pauseTimers()
         super.onPause()
     }
 
     override fun onResume() {
         super.onResume()
+        web.resumeTimers()
         web.onResume()
     }
 
     override fun onDestroy() {
+        preview.destroy()
         web.destroy()
         super.onDestroy()
     }

@@ -11,51 +11,73 @@
     <LinearLayout
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="54dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="14dp"
-        android:paddingEnd="6dp"
-        android:background="@drawable/toolbar_bg">
-
-        <ImageView
-            android:id="@+id/toolbarLogo"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:src="@drawable/sali_logo_icon"
-            android:contentDescription="@string/app_name" />
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/toolbar_bg"
+        android:elevation="6dp">
 
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginStart="10dp">
+            android:layout_width="match_parent"
+            android:layout_height="58dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="6dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/app_name"
-                android:textColor="@color/dark_on_surface"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+            <FrameLayout
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/logo_badge">
 
-            <TextView
-                android:layout_width="wrap_content"
+                <ImageView
+                    android:id="@+id/toolbarLogo"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/sali_logo_icon"
+                    android:contentDescription="@null"
+                    android:importantForAccessibility="no" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="chat.z.ai · GLM"
-                android:textColor="@color/purple_light"
-                android:textSize="10sp"
-                android:layoutDirection="ltr" />
+                android:layout_weight="1"
+                android:layout_marginStart="10dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/app_name"
+                    android:textColor="@color/dark_on_surface"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.02" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:text="@string/app_subtitle"
+                    android:textColor="@color/purple_light"
+                    android:textSize="10sp"
+                    android:layoutDirection="ltr" />
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/btnMenu"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:src="@drawable/ic_menu"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/menu_about" />
         </LinearLayout>
 
-        <ImageButton
-            android:id="@+id/btnMenu"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:src="@drawable/ic_menu"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/menu_about" />
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#14FFFFFF" />
     </LinearLayout>
 
     <!-- ── Content: web shell + overlays ─────────────────────────────── -->
@@ -64,22 +86,30 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipe"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <WebView
+                android:id="@+id/web"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layoutDirection="ltr"
+                android:background="@color/dark_background" />
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        <!-- Declared after the WebView so it stays visible above it. -->
         <ProgressBar
             android:id="@+id/progress"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
             android:layout_height="3dp"
+            android:layout_gravity="top"
             android:max="100"
-            android:progressTint="@color/progress_bar"
+            android:progressTint="@color/purple_primary"
             android:background="@color/dark_surface"
-            android:layout_gravity="top" />
-
-        <WebView
-            android:id="@+id/web"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layoutDirection="ltr"
-            android:background="@color/dark_background" />
+            android:elevation="6dp" />
 
         <!-- Fullscreen video host -->
         <FrameLayout
@@ -106,32 +136,35 @@
                 android:layout_gravity="center">
 
                 <ImageView
-                    android:layout_width="112dp"
-                    android:layout_height="112dp"
+                    android:id="@+id/introLogo"
+                    android:layout_width="108dp"
+                    android:layout_height="108dp"
                     android:src="@drawable/sali_logo_splash"
-                    android:contentDescription="@string/app_name" />
+                    android:contentDescription="@null"
+                    android:importantForAccessibility="no" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp"
+                    android:layout_marginTop="20dp"
                     android:text="@string/app_name"
                     android:textColor="@color/dark_on_surface"
-                    android:textSize="26sp"
-                    android:textStyle="bold" />
+                    android:textSize="28sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.06" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="8dp"
                     android:text="@string/app_tagline"
                     android:textColor="@color/dark_on_surface_variant"
-                    android:textSize="13sp" />
+                    android:textSize="12sp" />
 
                 <ProgressBar
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:layout_marginTop="22dp"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
+                    android:layout_marginTop="24dp"
                     android:indeterminateTint="@color/purple_primary" />
             </LinearLayout>
         </FrameLayout>
@@ -148,11 +181,12 @@
             android:visibility="gone">
 
             <ImageView
-                android:layout_width="72dp"
-                android:layout_height="72dp"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
                 android:src="@drawable/sali_logo_icon"
-                android:alpha="0.45"
-                android:contentDescription="@string/offline_title" />
+                android:alpha="0.4"
+                android:contentDescription="@null"
+                android:importantForAccessibility="no" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -168,6 +202,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:gravity="center"
+                android:lineSpacingExtra="4dp"
                 android:text="@string/offline_hint"
                 android:textColor="@color/dark_on_surface_variant"
                 android:textSize="13sp" />
@@ -175,16 +210,46 @@
             <TextView
                 android:id="@+id/btnRetry"
                 android:layout_width="wrap_content"
-                android:layout_height="44dp"
-                android:layout_marginTop="24dp"
+                android:layout_height="46dp"
+                android:layout_marginTop="26dp"
                 android:gravity="center"
+                android:minWidth="150dp"
                 android:paddingStart="28dp"
                 android:paddingEnd="28dp"
-                android:background="@drawable/btn_chip_bg"
+                android:background="@drawable/chip_bg_primary"
+                android:clickable="true"
+                android:focusable="true"
                 android:text="@string/retry"
+                android:textColor="@color/dark_on_surface"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnOfflineBrowser"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_marginTop="10dp"
+                android:gravity="center"
+                android:minWidth="150dp"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:background="@drawable/btn_ghost_bg"
+                android:clickable="true"
+                android:focusable="true"
+                android:text="@string/offline_open_browser"
                 android:textColor="@color/purple_light"
-                android:textSize="15sp" />
+                android:textSize="13sp" />
         </LinearLayout>
+
+        <!-- Dims the chat while the preview sheet is open -->
+        <View
+            android:id="@+id/previewScrim"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/scrim"
+            android:clickable="true"
+            android:focusable="false"
+            android:visibility="gone" />
 
         <!-- Minimized preview pill (chat keeps working underneath) -->
         <LinearLayout
@@ -196,11 +261,11 @@
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:paddingStart="14dp"
-            android:paddingEnd="6dp"
+            android:paddingEnd="4dp"
             android:paddingTop="6dp"
             android:paddingBottom="6dp"
             android:background="@drawable/pill_bg"
-            android:elevation="8dp"
+            android:elevation="10dp"
             android:visibility="gone"
             tools:visibility="visible">
 
@@ -208,14 +273,15 @@
                 android:layout_width="16dp"
                 android:layout_height="16dp"
                 android:src="@drawable/ic_eye"
-                android:contentDescription="@string/preview_pill" />
+                android:contentDescription="@null"
+                android:importantForAccessibility="no" />
 
             <TextView
                 android:id="@+id/pillLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:layout_marginEnd="6dp"
+                android:layout_marginEnd="4dp"
                 android:maxWidth="180dp"
                 android:singleLine="true"
                 android:ellipsize="middle"
@@ -225,8 +291,8 @@
 
             <ImageButton
                 android:id="@+id/pillClose"
-                android:layout_width="26dp"
-                android:layout_height="26dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:src="@drawable/ic_close"
                 android:scaleType="centerInside"
                 android:background="?attr/selectableItemBackgroundBorderless"
@@ -246,7 +312,7 @@
             android:contentDescription="@string/menu_show_bar"
             android:visibility="gone" />
 
-        <!-- ── File preview panel (half / full screen, draggable) ─────── -->
+        <!-- ── File preview sheet (half / full screen, draggable) ─────── -->
         <include
             android:id="@+id/previewPanel"
             layout="@layout/view_preview"

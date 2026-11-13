@@ -9,9 +9,13 @@
   html, body { height:100%; }
   body {
     background:#12101A; color:#F8F6F1;
-    font:13px/1.6 Tahoma,-apple-system,"Segoe UI",sans-serif;
+    font:13px/1.6 system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
     display:flex; flex-direction:column; overflow:hidden;
+    -webkit-font-smoothing:antialiased;
   }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb { background:#393344; border-radius:8px; }
+  ::-webkit-scrollbar-track { background:transparent; }
   #topbar {
     display:none; align-items:center; gap:6px; flex-wrap:wrap;
     padding:8px 10px; background:#1E1B29; border-bottom:1px solid #393344;
@@ -19,36 +23,43 @@
   }
   #topbar.show { display:flex; }
   .tab {
-    background:#12101A; color:#B9B4C1; border:1px solid #393344; border-radius:8px;
-    padding:5px 14px; font:600 12px/1 Tahoma,sans-serif; cursor:pointer;
+    background:#12101A; color:#B9B4C1; border:1px solid #393344; border-radius:9px;
+    padding:6px 16px; font-weight:600; font-size:12px; line-height:1; cursor:pointer;
+    transition:background .12s ease,color .12s ease;
   }
   .tab.active { background:#6C4BE0; color:#fff; border-color:#6C4BE0; }
   .grow { flex:1; }
   #wrapbtn {
-    background:transparent; color:#B9B4C1; border:1px solid #393344; border-radius:8px;
-    padding:5px 12px; font:600 11px/1 Tahoma,sans-serif; cursor:pointer;
+    background:transparent; color:#B9B4C1; border:1px solid #393344; border-radius:9px;
+    padding:6px 12px; font-weight:600; font-size:11px; line-height:1; cursor:pointer;
   }
   #wrapbtn.active { color:#4FD8E8; border-color:#4FD8E8; }
+  #truncbar {
+    display:none; flex:0 0 auto; direction:rtl;
+    background:#2A1F4D; color:#C9C4D2; border-bottom:1px solid #393344;
+    font-size:11.5px; line-height:1.5; padding:7px 12px;
+  }
+  #truncbar.show { display:block; }
   #stage { flex:1; min-height:0; position:relative; }
   .pane { position:absolute; inset:0; display:none; }
   .pane.show { display:block; }
   /* ── code view ── */
-  #codepane { overflow:auto; direction:ltr; }
+  #codepane { overflow:auto; direction:ltr; overscroll-behavior:contain; }
   #codeinner { display:inline-flex; min-width:100%; }
   #nums {
     position:sticky; left:0; z-index:2; background:#12101A;
-    color:#57506A; text-align:right; padding:10px 8px 14px 12px;
-    border-right:1px solid #393344; user-select:none;
-    font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;
+    color:#57506A; text-align:right; padding:12px 8px 16px 12px;
+    border-right:1px solid #2E2939; user-select:none;
+    font:12.5px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;
     white-space:pre;
   }
   #codebox {
-    padding:10px 14px 14px 14px; white-space:pre;
-    font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;
+    padding:12px 16px 16px 14px; white-space:pre; tab-size:4;
+    font:12.5px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;
     flex:1;
   }
   body.wrap #nums { display:none; }
-  body.wrap #codebox { white-space:pre-wrap; word-break:break-all; }
+  body.wrap #codebox { white-space:pre-wrap; word-break:break-word; }
   /* tokens */
   .t-c { color:#6E6880; font-style:italic; }   /* comment  */
   .t-s { color:#8FCE7E; }                      /* string   */
@@ -59,47 +70,49 @@
   #resultpane { background:#fff; }
   #frame { width:100%; height:100%; border:0; background:#fff; }
   /* markdown result */
-  #mdpane { overflow:auto; padding:18px 20px 30px; background:#12101A; }
-  #mdbox { max-width:760px; margin:0 auto; line-height:1.9; font-size:14px; }
-  #mdbox h1,#mdbox h2,#mdbox h3,#mdbox h4 { color:#F8F6F1; margin:1.1em 0 .5em; line-height:1.4; }
-  #mdbox h1 { font-size:1.55em; border-bottom:1px solid #393344; padding-bottom:.3em; }
+  #mdpane { overflow:auto; padding:18px 20px 34px; background:#12101A; overscroll-behavior:contain; }
+  #mdbox { max-width:760px; margin:0 auto; line-height:1.95; font-size:14px; }
+  #mdbox h1,#mdbox h2,#mdbox h3,#mdbox h4 { color:#F8F6F1; margin:1.2em 0 .55em; line-height:1.45; }
+  #mdbox h1 { font-size:1.55em; border-bottom:1px solid #393344; padding-bottom:.35em; }
   #mdbox h2 { font-size:1.3em; } #mdbox h3 { font-size:1.12em; } #mdbox h4 { font-size:1em; }
-  #mdbox p { margin:.6em 0; }
-  #mdbox a { color:#9E86FF; }
+  #mdbox p { margin:.65em 0; }
+  #mdbox a { color:#9E86FF; text-decoration:none; border-bottom:1px solid rgba(158,134,255,.35); }
+  #mdbox strong { color:#FFFDF8; }
   #mdbox code {
-    background:#1E1B29; border:1px solid #393344; border-radius:5px;
+    background:#1E1B29; border:1px solid #393344; border-radius:6px;
     padding:1px 6px; font-size:.88em; color:#4FD8E8; direction:ltr; unicode-bidi:embed;
     font-family:ui-monospace,Menlo,Consolas,monospace;
   }
   #mdbox pre {
-    background:#08070D; border:1px solid #393344; border-radius:10px;
-    padding:12px 14px; overflow:auto; margin:.8em 0; direction:ltr; text-align:left;
+    background:#08070D; border:1px solid #393344; border-radius:12px;
+    padding:12px 14px; overflow:auto; margin:.9em 0; direction:ltr; text-align:left;
   }
   #mdbox pre code { background:transparent; border:0; padding:0; color:#F3F0EA; }
   #mdbox blockquote {
     border-inline-start:3px solid #6C4BE0; background:#1E1B29;
-    padding:8px 14px; border-radius:8px; margin:.8em 0; color:#B9B4C1;
+    padding:8px 14px; border-radius:10px; margin:.9em 0; color:#B9B4C1;
   }
-  #mdbox ul,#mdbox ol { padding-inline-start:1.6em; margin:.6em 0; }
-  #mdbox li { margin:.25em 0; }
-  #mdbox hr { border:0; border-top:1px solid #393344; margin:1.2em 0; }
-  #mdbox img { max-width:100%; border-radius:8px; }
+  #mdbox ul,#mdbox ol { padding-inline-start:1.6em; margin:.65em 0; }
+  #mdbox li { margin:.28em 0; }
+  #mdbox hr { border:0; border-top:1px solid #393344; margin:1.3em 0; }
+  #mdbox img { max-width:100%; border-radius:10px; }
   #mdbox table { border-collapse:collapse; margin:1em 0; width:100%; font-size:.92em; }
-  #mdbox th,#mdbox td { border:1px solid #393344; padding:6px 10px; text-align:start; }
+  #mdbox th,#mdbox td { border:1px solid #393344; padding:7px 10px; text-align:start; }
   #mdbox th { background:#1E1B29; }
   /* ── image view ── */
-  #imgpane { overflow:auto; background:#08070D; display:none; }
+  #imgpane { overflow:auto; background:#08070D; display:none; overscroll-behavior:contain; }
   #imgpane.show { display:block; }
-  #imgpane img { max-width:none; }
+  #imgpane img { max-width:none; display:block; }
 </style>
 </head>
 <body>
   <div id="topbar">
-    <button class="tab" id="tabCode">کد</button>
-    <button class="tab" id="tabResult">نتیجه</button>
+    <button type="button" class="tab" id="tabCode">کد</button>
+    <button type="button" class="tab" id="tabResult">نتیجه</button>
     <div class="grow"></div>
-    <button id="wrapbtn">شکستن خطوط</button>
+    <button type="button" id="wrapbtn">شکستن خطوط</button>
   </div>
+  <div id="truncbar"></div>
   <div id="stage">
     <div class="pane" id="codepane">
       <div id="codeinner">
@@ -108,7 +121,7 @@
       </div>
     </div>
     <div class="pane" id="resultpane">
-      <iframe id="frame" sandbox="allow-scripts allow-forms allow-modals allow-popups allow-downloads"></iframe>
+      <iframe id="frame" sandbox="allow-scripts allow-forms allow-modals"></iframe>
     </div>
     <div class="pane" id="mdpane"><div id="mdbox"></div></div>
     <div class="pane" id="imgpane"><img id="img" alt="preview"></div>
@@ -143,10 +156,10 @@ function famOf(lang) {
 function regexFor(fam) {
   switch (fam) {
     case 'clike': return new RegExp(
-      '(\\/\\*[\\s\\S]*?\\*\\/|\\/\\/[^\\n]*)' +           // 1 comment
-      '|("(?:\\\\.|[^"\\\\\\n])*"|\'(?:\\\\.|[^\'\\\\\\n])*\'|`(?:\\\\.|[^`\\\\])*`)' + // 2 string
-      '|\\b(' + KW.clike.split(' ').join('|') + ')\\b' +    // 3 keyword
-      '|\\b(0x[0-9a-fA-F]+|\\d+\\.?\\d*(?:[eE][+-]?\\d+)?)', 'g'); // 4 number
+      '(\\/\\*[\\s\\S]*?\\*\\/|\\/\\/[^\\n]*)' +
+      '|("(?:\\\\.|[^"\\\\\\n])*"|\'(?:\\\\.|[^\'\\\\\\n])*\'|`(?:\\\\.|[^`\\\\])*`)' +
+      '|\\b(' + KW.clike.split(' ').join('|') + ')\\b' +
+      '|\\b(0x[0-9a-fA-F]+|\\d+\\.?\\d*(?:[eE][+-]?\\d+)?)', 'g');
     case 'python': return new RegExp(
       '(#[^\\n]*)' +
       '|("""[\\s\\S]*?"""|\'\'\'[\\s\\S]*?\'\'\'|"(?:\\\\.|[^"\\\\\\n])*"|\'(?:\\\\.|[^\'\\\\\\n])*\')' +
@@ -176,7 +189,12 @@ function regexFor(fam) {
   }
 }
 function esc(s) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 function tokenClass(fam, groups) {
   switch (fam) {
@@ -223,11 +241,23 @@ function highlight(code, lang) {
 }
 
 /* ══════════════ tiny markdown renderer ══════════════ */
+function safeUrl(u) {
+  var url = String(u || '').trim();
+  if (/^(https?:|mailto:)/i.test(url)) return url;
+  if (/^data:image\/(png|jpe?g|gif|webp|svg\+xml);/i.test(url)) return url;
+  return '';
+}
 function inline(s) {
   s = esc(s);
-  s = s.replace(/`([^`]+)`/g, function(_, c){ return '<code>' + c + '</code>'; });
-  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g, '<img src="$2" alt="$1">');
-  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)[^)]*\)/g, '<a href="$2">$1</a>');
+  s = s.replace(/`([^`]+)`/g, function (_, c) { return '<code>' + c + '</code>'; });
+  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g, function (_, alt, url) {
+    var safe = safeUrl(url.replace(/&amp;/g, '&'));
+    return safe ? '<img src="' + esc(safe) + '" alt="' + alt + '">' : alt;
+  });
+  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)[^)]*\)/g, function (_, text, url) {
+    var safe = safeUrl(url.replace(/&amp;/g, '&'));
+    return safe ? '<a href="' + esc(safe) + '" rel="noreferrer">' + text + '</a>' : text;
+  });
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   s = s.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
   s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
@@ -268,20 +298,20 @@ function mdToHtml(src) {
         items.push(tmp[2]); i++;
       }
       var tag = ordered ? 'ol' : 'ul';
-      html += '<' + tag + '>' + items.map(function(x){ return '<li>' + inline(x) + '</li>'; }).join('') + '</' + tag + '>';
+      html += '<' + tag + '>' + items.map(function (x) { return '<li>' + inline(x) + '</li>'; }).join('') + '</' + tag + '>';
       continue;
     }
-    if (l.indexOf('|') > -1 && i + 1 < lines.length && /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[i+1])) {
+    if (l.indexOf('|') > -1 && i + 1 < lines.length && /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[i + 1])) {
       flush();
-      var head = l.replace(/^\||\|$/g, '').split('|').map(function(x){return x.trim();});
+      var head = l.replace(/^\||\|$/g, '').split('|').map(function (x) { return x.trim(); });
       i += 2;
       var rows = [];
       while (i < lines.length && lines[i].indexOf('|') > -1 && lines[i].trim() !== '') {
-        rows.push(lines[i].replace(/^\||\|$/g, '').split('|').map(function(x){return x.trim();}));
+        rows.push(lines[i].replace(/^\||\|$/g, '').split('|').map(function (x) { return x.trim(); }));
         i++;
       }
-      html += '<table><thead><tr>' + head.map(function(x){return '<th>'+inline(x)+'</th>';}).join('') + '</tr></thead><tbody>' +
-        rows.map(function(r){ return '<tr>' + r.map(function(x){return '<td>'+inline(x)+'</td>';}).join('') + '</tr>'; }).join('') +
+      html += '<table><thead><tr>' + head.map(function (x) { return '<th>' + inline(x) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        rows.map(function (r) { return '<tr>' + r.map(function (x) { return '<td>' + inline(x) + '</td>'; }).join('') + '</tr>'; }).join('') +
         '</tbody></table>';
       continue;
     }
@@ -298,11 +328,13 @@ var SaliXViewer = {
     var mode = (o && o.mode) || 'code';
     var lang = (o && o.lang) || 'text';
     var content = (o && o.content) || '';
+    var truncated = !!(o && o.truncated);
 
     document.body.classList.remove('wrap');
     document.getElementById('wrapbtn').classList.remove('active');
 
     var top = document.getElementById('topbar');
+    var truncbar = document.getElementById('truncbar');
     var panes = ['codepane', 'resultpane', 'mdpane', 'imgpane'];
     function show(id) {
       panes.forEach(function (p) {
@@ -313,6 +345,11 @@ var SaliXViewer = {
       document.getElementById('tabCode').classList.toggle('active', active === 'code');
       document.getElementById('tabResult').classList.toggle('active', active === 'result');
     }
+
+    truncbar.textContent = truncated
+      ? 'پیش‌نمایش برای کارایی کوتاه شده است — کپی و ذخیره شامل کل محتواست.'
+      : '';
+    truncbar.classList.toggle('show', truncated);
 
     if (mode === 'image') {
       top.classList.remove('show');

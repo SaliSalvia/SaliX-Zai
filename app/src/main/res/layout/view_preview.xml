@@ -6,20 +6,33 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/preview_bg"
-    android:elevation="16dp"
+    android:elevation="24dp"
     android:visibility="gone"
     tools:visibility="visible">
 
-    <!-- Draggable header -->
+    <!-- Drag handle -->
+    <LinearLayout
+        android:id="@+id/previewDragBar"
+        android:layout_width="match_parent"
+        android:layout_height="22dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <View
+            android:layout_width="42dp"
+            android:layout_height="4dp"
+            android:background="@drawable/sheet_handle" />
+    </LinearLayout>
+
+    <!-- Title row -->
     <LinearLayout
         android:id="@+id/previewHeader"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="46dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingStart="14dp"
-        android:paddingEnd="8dp"
-        android:background="@color/dark_surface_variant">
+        android:paddingEnd="4dp">
 
         <TextView
             android:id="@+id/previewName"
@@ -50,36 +63,37 @@
 
         <ImageButton
             android:id="@+id/btnExpand"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="4dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="2dp"
             android:src="@drawable/ic_expand"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/preview_expand" />
 
         <ImageButton
             android:id="@+id/btnMinimize"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:src="@drawable/ic_minimize"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/preview_minimize" />
 
         <ImageButton
             android:id="@+id/btnClose"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:src="@drawable/ic_close"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/preview_close" />
     </LinearLayout>
 
-    <!-- Action chips row -->
+    <!-- Action chips -->
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:scrollbars="none"
-        android:requiresFadingEdge="horizontal">
+        android:requiresFadingEdge="horizontal"
+        android:fadingEdgeLength="24dp">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -87,64 +101,37 @@
             android:orientation="horizontal"
             android:paddingStart="10dp"
             android:paddingEnd="10dp"
-            android:paddingTop="8dp"
+            android:paddingTop="4dp"
             android:paddingBottom="8dp">
 
             <TextView
                 android:id="@+id/chipCopy"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:gravity="center"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:layout_marginEnd="8dp"
-                android:background="@drawable/btn_chip_bg"
+                style="@style/Widget.SaliX.Chip.Primary"
                 android:text="@string/preview_copy"
-                android:textColor="@color/dark_on_surface"
-                android:textSize="13sp" />
+                android:drawableStart="@drawable/ic_copy_18" />
 
             <TextView
                 android:id="@+id/chipSave"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:gravity="center"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:layout_marginEnd="8dp"
-                android:background="@drawable/btn_chip_bg"
+                style="@style/Widget.SaliX.Chip"
                 android:text="@string/preview_save"
-                android:textColor="@color/dark_on_surface"
-                android:textSize="13sp" />
+                android:drawableStart="@drawable/ic_save_18" />
 
             <TextView
                 android:id="@+id/chipShare"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:gravity="center"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:layout_marginEnd="8dp"
-                android:background="@drawable/btn_chip_bg"
+                style="@style/Widget.SaliX.Chip"
                 android:text="@string/preview_share"
-                android:textColor="@color/dark_on_surface"
-                android:textSize="13sp" />
+                android:drawableStart="@drawable/ic_share_18" />
 
             <TextView
                 android:id="@+id/chipExternal"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:gravity="center"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:layout_marginEnd="8dp"
-                android:background="@drawable/btn_chip_bg"
+                style="@style/Widget.SaliX.Chip"
+                android:layout_marginEnd="0dp"
                 android:text="@string/open_externally"
-                android:textColor="@color/dark_on_surface"
-                android:textSize="13sp" />
+                android:drawableStart="@drawable/ic_open_ext_18" />
         </LinearLayout>
     </HorizontalScrollView>
 
-    <!-- Body: viewer WebView -->
+    <!-- Viewer -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -159,8 +146,8 @@
 
         <ProgressBar
             android:id="@+id/previewLoading"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
             android:layout_gravity="center"
             android:indeterminateTint="@color/purple_primary" />
     </FrameLayout>
