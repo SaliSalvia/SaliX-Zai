@@ -3,12 +3,15 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-// Version is overridable from CI so every release tag gets a higher versionCode:
-//   ./gradlew assembleRelease -PversionCode=42 -PversionName=1.4.0
+// Version comes from gradle.properties (app.versionName) so CI and the build
+// read one source of truth; CI overrides both for a release build:
+//   ./gradlew assembleRelease -PversionCode=42 -PversionName=2.1.0
+val appVersionName: String =
+    providers.gradleProperty("versionName").orNull?.takeIf { it.isNotBlank() }
+        ?: providers.gradleProperty("app.versionName").orNull?.takeIf { it.isNotBlank() }
+        ?: "0.0.0"
 val appVersionCode: Int =
     (providers.gradleProperty("versionCode").orNull ?: "1").toIntOrNull() ?: 1
-val appVersionName: String =
-    providers.gradleProperty("versionName").orNull?.takeIf { it.isNotBlank() } ?: "1.1.0"
 
 android {
     namespace = "com.salixz.app"
